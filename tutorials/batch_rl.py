@@ -5,7 +5,7 @@ sys.path.insert(0,os.path.abspath('..'))
 from copy import deepcopy
 import tensorflow as tf
 # import os
-
+import argparse
 from rl_coach.agents.dqn_agent import DQNAgentParameters
 from rl_coach.agents.ddqn_bcq_agent import DDQNBCQAgentParameters, KNNParameters
 from rl_coach.base_parameters import VisualizationParameters
@@ -31,24 +31,24 @@ task_parameters = TaskParameters(experiment_path='.')
 ####################
 # Graph Scheduling #
 ####################
-def set_schedule_params():
+def set_schedule_params(n_epochs,dataset_size):
     schedule_params = ScheduleParameters()
 
     # 100 epochs (we run train over all the dataset, every epoch) of training
-    schedule_params.improve_steps = TrainingSteps(100)
+    schedule_params.improve_steps = TrainingSteps(n_epochs)
 
     # we evaluate the model every epoch
     schedule_params.steps_between_evaluation_periods = TrainingSteps(1)
 
     # only for when we have an enviroment
     schedule_params.evaluation_steps = EnvironmentEpisodes(10)
-    schedule_params.heatup_steps = EnvironmentSteps(DATASET_SIZE)
+    schedule_params.heatup_steps = EnvironmentSteps(dataset_size)
     return schedule_params
 
 ################
 #  Environment #
 ################
-env_params = GymVectorEnvironment(level='Acrobot-v1')
+
 
 def set_agent_params():
     #########
@@ -77,10 +77,10 @@ def set_agent_params():
     return agent_params
 
 
-def train_on_pure_random():
+def train_on_pure_random(env_params,n_epochs,dataset_size):
     tf.reset_default_graph()  # just to clean things up; only needed for the tutorial
 
-    schedule_params = set_schedule_params()
+    schedule_params = set_schedule_params(n_epochs,dataset_size)
     agent_params = set_agent_params()
 
     graph_manager = BatchRLGraphManager(agent_params=agent_params,
@@ -93,7 +93,7 @@ def train_on_pure_random():
     return
 
 
-def train_using_experience_agent():
+def train_using_experience_agent(env_params,n_epochs,dataset_size):
     tf.reset_default_graph()  # just to clean things up; only needed for the tutorial
 
     # Experience Generating Agent parameters
@@ -102,7 +102,7 @@ def train_using_experience_agent():
     experience_generating_schedule_params = ScheduleParameters()
     experience_generating_schedule_params.heatup_steps = EnvironmentSteps(1000)
     experience_generating_schedule_params.improve_steps = TrainingSteps(
-        DATASET_SIZE - experience_generating_schedule_params.heatup_steps.num_steps)
+        dataset_size - experience_generating_schedule_params.heatup_steps.num_steps)
     experience_generating_schedule_params.steps_between_evaluation_periods = EnvironmentEpisodes(10)
     experience_generating_schedule_params.evaluation_steps = EnvironmentEpisodes(1)
 
@@ -132,7 +132,7 @@ def train_using_experience_agent():
 
 
 
-    schedule_params = set_schedule_params()
+    schedule_params = set_schedule_params(n_epochs,dataset_size)
     # set the agent params as before
     agent_params = set_agent_params()
 
@@ -154,10 +154,10 @@ def train_using_experience_agent():
 
 
 
-def train_on_csv_file(csv_file):
+def train_on_csv_file(csv_file,n_epochs,dataset_size):
     tf.reset_default_graph()  # just to clean things up; only needed for the tutorial
 
-    schedule_params = set_schedule_params()
+    schedule_params = set_schedule_params(n_epochs,dataset_size)
 
     #########
     # Agent #
@@ -209,13 +209,32 @@ def train_on_csv_file(csv_file):
     return
 
 
+def parse_cmd_line():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m','--mode',type=str,default='rnd',help='rnd / olx / <file.csv>')
+    parser.add_argument('-e','--env',type=str,default='Acrobot-v1',help='Acrobot-v1 , CartPole-v0, CartPole-v1, MountainCar-v0, LunarLander-v2')
+    parser.add_argument('-n', '--n_epochs', help='number of epochs', default=100, type=int)
+    parser.add_argument('-s','--dataset_size',default=DATASET_SIZE,type=int)
+    args = parser.parse_args()
+    return args
 
 
 def main():
-    train_on_pure_random()
-    # train_using_experience_agent()
-    # train_on_csv_file('./acrobot_dataset.csv')
-
+    args = parse_cmd_line()
+    env_params = GymVectorEnvironment(level=args.env)
+    if args.mode == 'rnd':
+        print('training on pure random agent experience and training offline')
+        train_on_pure_random(env_params,args.n_epochs,args.dataset_size)
+    elif args.mode == 'olx':
+        print('using trained egent to generate experience and training offline')
+        train_using_experience_agent(env_params,args.n_epochs,args.dataset_size)
+    else:
+        # train_on_csv_file('./acrobot_dataset.csv')
+        print('loading experience from csv and training offline')
+        assert os.path.expanduser(args.mode), 'csv file does not exist'
+        train_on_csv_file(args.mode,args.n_epochs,args.dataset_size)
+    return
 
 
 if __name__=='__main__':
