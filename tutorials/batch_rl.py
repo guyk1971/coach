@@ -137,7 +137,7 @@ def train_using_experience_agent(env_params,n_epochs,dataset_size):
     agent_params = set_agent_params()
 
     # 50 epochs of training (the entire dataset is used each epoch)
-    schedule_params.improve_steps = TrainingSteps(50)
+    # schedule_params.improve_steps = TrainingSteps(50)
 
     graph_manager = BatchRLGraphManager(agent_params=agent_params,
                                         experience_generating_agent_params=experience_generating_agent_params,
