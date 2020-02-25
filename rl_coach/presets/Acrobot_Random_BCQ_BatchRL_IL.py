@@ -36,8 +36,7 @@ agent_params.network_wrappers['main'].batch_size = 128
 # TODO cross-DL framework abstraction for a constant initializer?
 agent_params.network_wrappers['main'].heads_parameters = [QHeadParameters(output_bias_initializer=tf.constant_initializer(-100))]
 
-agent_params.algorithm.num_steps_between_copying_online_weights_to_target = TrainingSteps(
-    100)
+agent_params.algorithm.num_steps_between_copying_online_weights_to_target = TrainingSteps(100)
 agent_params.algorithm.discount = 0.99
 
 # agent_params.algorithm.action_drop_method_parameters = KNNParameters()
