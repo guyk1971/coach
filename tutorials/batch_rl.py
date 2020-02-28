@@ -134,7 +134,10 @@ def train_using_experience_agent(env_params,n_epochs,dataset_size):
 
     schedule_params = set_schedule_params(n_epochs,dataset_size)
     # set the agent params as before
-    agent_params = set_agent_params(DDQNAgentParameters)
+    # agent_params = set_agent_params(DDQNAgentParameters)
+    agent_params = set_agent_params(DDQNBCQAgentParameters)
+    agent_params.algorithm.action_drop_method_parameters = NNImitationModelParameters()
+
 
     # 50 epochs of training (the entire dataset is used each epoch)
     # schedule_params.improve_steps = TrainingSteps(50)
