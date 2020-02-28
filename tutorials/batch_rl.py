@@ -65,6 +65,9 @@ def set_agent_params(agent_params_func):
     # with a number in the order of the discounted reward of a random policy
     agent_params.network_wrappers['main'].heads_parameters = \
         [QHeadParameters(output_bias_initializer=tf.constant_initializer(-100))]
+    # agent_params.network_wrappers['main'].heads_parameters = \
+    #     [QHeadParameters(output_bias_initializer=tf.constant_initializer(0))]
+
 
     # NN configuration
     agent_params.network_wrappers['main'].learning_rate = 0.0001
@@ -120,6 +123,8 @@ def train_using_experience_agent(env_params,n_epochs,dataset_size):
     experience_generating_agent_params.network_wrappers['main'].replace_mse_with_huber_loss = False
     experience_generating_agent_params.network_wrappers['main'].heads_parameters = \
         [QHeadParameters(output_bias_initializer=tf.constant_initializer(-100))]
+    # experience_generating_agent_params.network_wrappers['main'].heads_parameters = \
+    #     [QHeadParameters(output_bias_initializer=tf.constant_initializer(0))]
 
     # ER size
     experience_generating_agent_params.memory = EpisodicExperienceReplayParameters()
