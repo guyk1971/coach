@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.insert(0,os.path.abspath('..'))
-
+import pandas as pd
 from copy import deepcopy
 import tensorflow as tf
 # import os
@@ -72,6 +72,7 @@ def set_agent_params(agent_params_func):
     # NN configuration
     agent_params.network_wrappers['main'].learning_rate = 0.0001
     agent_params.network_wrappers['main'].replace_mse_with_huber_loss = False
+    agent_params.network_wrappers['main'].softmax_temperature = 0.2
 
     # ER - we'll need an episodic replay buffer for off-policy evaluation
     agent_params.memory = EpisodicExperienceReplayParameters()
@@ -160,9 +161,7 @@ def train_using_experience_agent(env_params,n_epochs,dataset_size):
     return
 
 
-
-
-def train_on_csv_file(csv_file,n_epochs,dataset_size):
+def train_on_csv_file(csv_file,n_epochs,dataset_size,obs_dim,act_dim):
     tf.reset_default_graph()  # just to clean things up; only needed for the tutorial
 
     schedule_params = set_schedule_params(n_epochs,dataset_size)
@@ -180,9 +179,9 @@ def train_on_csv_file(csv_file,n_epochs,dataset_size):
     DATATSET_PATH = csv_file
     agent_params.memory.load_memory_from_file_path = CsvDataset(DATATSET_PATH, is_episodic=True)
 
-    spaces = SpacesDefinition(state=StateSpace({'observation': VectorObservationSpace(shape=6)}),
+    spaces = SpacesDefinition(state=StateSpace({'observation': VectorObservationSpace(shape=obs_dim)}),
                               goal=None,
-                              action=DiscreteActionSpace(3),
+                              action=DiscreteActionSpace(act_dim),
                               reward=RewardSpace(1))
 
     graph_manager = BatchRLGraphManager(agent_params=agent_params,
@@ -204,6 +203,7 @@ def parse_cmd_line():
     parser.add_argument('-e','--env',type=str,default='Acrobot-v1',help='Acrobot-v1 , CartPole-v0, CartPole-v1, MountainCar-v0, LunarLander-v2')
     parser.add_argument('-n', '--n_epochs', help='number of epochs', default=100, type=int)
     parser.add_argument('-s','--dataset_size',default=DATASET_SIZE,type=int)
+
     args = parser.parse_args()
     return args
 
@@ -220,8 +220,13 @@ def main():
     else:
         # train_on_csv_file('./acrobot_dataset.csv')
         print('loading experience from csv and training offline')
-        assert os.path.expanduser(args.mode), 'csv file does not exist'
-        train_on_csv_file(args.mode,args.n_epochs,args.dataset_size)
+        # assert os.path.expanduser(args.mode), 'csv file does not exist'
+        # extract obs_dim, act_dim from the file
+        csv_file_name = os.path.join(os.path.expanduser('~'),'share/Data/MLA/L2P',args.mode)
+        df = pd.read_csv(csv_file_name)
+        act_dim = 1+df['action'].max()    # assuming discrete actions starting from 0
+        obs_dim = len([s for s in df.columns if 'state_feature' in s])
+        train_on_csv_file(csv_file_name,args.n_epochs,args.dataset_size,obs_dim=obs_dim,act_dim=act_dim)
     return
 
 

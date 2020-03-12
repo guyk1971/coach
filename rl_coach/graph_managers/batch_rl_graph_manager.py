@@ -233,6 +233,7 @@ class BatchRLGraphManager(BasicRLGraphManager):
 
             # the output of batch RL training is always a checkpoint of the trained agent. we always save a checkpoint,
             # each epoch, regardless of the user's command line arguments.
+
             # self.save_checkpoint()        # GK: Currently disabled for debug
 
             # run off-policy evaluation estimators to evaluate the agent's performance against the dataset

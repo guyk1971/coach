@@ -463,8 +463,8 @@ class Timer(object):
 
 class ReaderWriterLock(object):
     def __init__(self):
-        # self.num_readers_lock = Manager().Lock()
-        # self.writers_lock = Manager().Lock()
+        # self.num_readers_lock = Manager().Lock()      # GK
+        # self.writers_lock = Manager().Lock()          # GK
         self.num_readers = 0
         self.now_writing = False
 
@@ -475,27 +475,27 @@ class ReaderWriterLock(object):
         return self.now_writing is True
 
     def lock_writing_and_reading(self):
-        # self.writers_lock.acquire()  # first things first - block all other writers
+        # self.writers_lock.acquire()  # first things first - block all other writers   #GK
         self.now_writing = True  # block new readers who haven't started reading yet
         while self.some_worker_is_reading():  # let existing readers finish their homework
             time.sleep(0.05)
 
     def release_writing_and_reading(self):
         self.now_writing = False  # release readers - guarantee no readers starvation
-        # self.writers_lock.release()  # release writers
+        # self.writers_lock.release()  # release writers        #GK
 
     def lock_writing(self):
         while self.now_writing:
             time.sleep(0.05)
 
-        # self.num_readers_lock.acquire()
+        # self.num_readers_lock.acquire()       #GK
         self.num_readers += 1
-        # self.num_readers_lock.release()
+        # self.num_readers_lock.release()       #GK
 
     def release_writing(self):
-        # self.num_readers_lock.acquire()
+        # self.num_readers_lock.acquire()       #GK
         self.num_readers -= 1
-        # self.num_readers_lock.release()
+        # self.num_readers_lock.release()       #GK
 
 
 class ProgressBar(object):
