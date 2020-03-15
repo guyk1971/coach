@@ -92,6 +92,11 @@ class BatchRLGraphManager(BasicRLGraphManager):
 
             self.set_schedule_params(experience_generating_schedule_params)
             self.schedule_params = schedule_params
+        self.batch_epochs_between_checkpoints = 10       # by default, save every epoch
+        # if hasattr(schedule_params,'batch_epochs_between_checkpoints'):
+        #     self.batch_epochs_between_checkpoints = schedule_params.batch_epochs_between_checkpoints
+
+
 
     def _create_graph(self, task_parameters: TaskParameters) -> Tuple[List[LevelManager], List[Environment]]:
         if self.env_params:
@@ -220,6 +225,7 @@ class BatchRLGraphManager(BasicRLGraphManager):
 
         # the outer most training loop
         improve_steps_end = self.total_steps_counters[RunPhase.TRAIN] + self.improve_steps
+        n_epochs_since_last_ckpt = 0
         while self.total_steps_counters[RunPhase.TRAIN] < improve_steps_end:
             # perform several steps of training
             if self.steps_between_evaluation_periods.num_steps > 0:
@@ -233,8 +239,11 @@ class BatchRLGraphManager(BasicRLGraphManager):
 
             # the output of batch RL training is always a checkpoint of the trained agent. we always save a checkpoint,
             # each epoch, regardless of the user's command line arguments.
-
-            # self.save_checkpoint()        # GK: Currently disabled for debug
+            # GK: added an attribute to the BatchRLGraphManager to save checkpoint every 10 epochs
+            n_epochs_since_last_ckpt+=1
+            if n_epochs_since_last_ckpt == self.batch_epochs_between_checkpoints:
+                self.save_checkpoint()
+                n_epochs_since_last_ckpt = 0
 
             # run off-policy evaluation estimators to evaluate the agent's performance against the dataset
             self.run_off_policy_evaluation()
